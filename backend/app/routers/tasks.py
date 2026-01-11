@@ -5,7 +5,7 @@ from app.schemas import Task, TaskCreate, TaskUpdate
 
 router = APIRouter()
 
-@router.post("/tasks/", response_model=Task)
+@router.post("/", response_model=Task)
 async def create_task(task: TaskCreate):
     # TODO: Get actual user ID from auth
     user_id = 1 
@@ -16,7 +16,7 @@ async def create_task(task: TaskCreate):
     new_task = await db.task.create(data=data)
     return new_task
 
-@router.get("/tasks/", response_model=List[Task])
+@router.get("/", response_model=List[Task])
 async def get_tasks(
     subject_id: Optional[int] = Query(None, alias="subjectId"),
     is_completed: Optional[bool] = Query(None, alias="isCompleted")
@@ -35,7 +35,7 @@ async def get_tasks(
     )
     return tasks
 
-@router.get("/tasks/{task_id}", response_model=Task)
+@router.get("/{task_id}", response_model=Task)
 async def get_task(task_id: int):
     task = await db.task.find_unique(
         where={'id': task_id},
@@ -45,7 +45,7 @@ async def get_task(task_id: int):
         raise HTTPException(status_code=404, detail="Task not found")
     return task
 
-@router.put("/tasks/{task_id}", response_model=Task)
+@router.put("/{task_id}", response_model=Task)
 async def update_task(task_id: int, task_update: TaskUpdate):
     existing_task = await db.task.find_unique(where={'id': task_id})
     if not existing_task:
@@ -59,7 +59,7 @@ async def update_task(task_id: int, task_update: TaskUpdate):
     )
     return updated_task
 
-@router.delete("/tasks/{task_id}", response_model=Task)
+@router.delete("/{task_id}", response_model=Task)
 async def delete_task(task_id: int):
     existing_task = await db.task.find_unique(where={'id': task_id})
     if not existing_task:
@@ -67,3 +67,4 @@ async def delete_task(task_id: int):
         
     deleted_task = await db.task.delete(where={'id': task_id})
     return deleted_task
+
