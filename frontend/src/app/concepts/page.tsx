@@ -4,13 +4,12 @@ import { useState, useEffect } from "react";
 import TagCloud from "react-tag-cloud";
 import { Loader2, Brain, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 import { QuizModal } from "@/components/QuizModal";
 
 interface CloudItem {
-    id: number; // Add ID
+    id: number;
     text: string;
-    value: number; // Importance 0-100
+    value: number;
     color: string;
     statusColor: string;
     subject: string;
@@ -24,7 +23,6 @@ export default function ConceptsPage() {
 
     const handleTestConcept = async (tag: CloudItem) => {
         if (!confirm(`Start a quick quiz on "${tag.text}"?`)) return;
-
         try {
             const res = await fetch("http://localhost:8000/api/v1/tutor/quiz", {
                 method: "POST",
@@ -61,7 +59,11 @@ export default function ConceptsPage() {
     }, []);
 
     if (loading && tags.length === 0) {
-        return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+        return (
+            <div className="flex h-screen items-center justify-center">
+                <Loader2 className="animate-spin text-primary" />
+            </div>
+        );
     }
 
     return (
@@ -92,25 +94,23 @@ export default function ConceptsPage() {
                     <div className="text-center text-muted-foreground">
                         <Brain className="w-12 h-12 mx-auto mb-4 opacity-50" />
                         <p>No concepts found.</p>
-                        <p className="text-sm">Try uploading a textbook in Library and clicking "Analyze".</p>
+                        <p className="text-sm">Try uploading a textbook in Library and clicking &quot;Analyze&quot;.</p>
                     </div>
                 ) : (
                     <TagCloud
                         style={{
                             fontFamily: 'Inter, sans-serif',
                             fontSize: 30,
-                            padding: 5,
-                            width: '90%',
-                            height: '90%'
+                            padding: 5
                         }}
                     >
                         {tags.map((tag, i) => (
                             <div
                                 key={i}
                                 style={{
-                                    fontSize: Math.max(16, tag.value / 2), // Scale
+                                    fontSize: Math.max(16, tag.value / 2),
                                     fontWeight: tag.value > 80 ? 800 : 500,
-                                    color: tag.statusColor, // Use status color (Red/Green logic)
+                                    color: tag.statusColor,
                                     cursor: 'pointer',
                                     padding: '4px',
                                     transition: 'all 0.3s ease'
@@ -120,7 +120,7 @@ export default function ConceptsPage() {
                             >
                                 {tag.text}
                             </div>
-                        )}
+                        ))}
                     </TagCloud>
                 )}
 
