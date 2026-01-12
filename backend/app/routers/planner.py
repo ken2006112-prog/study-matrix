@@ -24,6 +24,21 @@ async def get_roadmap():
     )
     return plans
 
+# --- Adaptive Replanning (Module 3) ---
+from app.services.adaptive_planner import adaptive_planner
+
+@router.get("/check-deviation")
+async def check_deviation():
+    """Check how far behind the user is from their planned schedule."""
+    user_id = 1  # TODO: Auth
+    return await adaptive_planner.check_deviation(user_id)
+
+@router.post("/replan")
+async def trigger_replan():
+    """Trigger adaptive replanning to redistribute tasks."""
+    user_id = 1  # TODO: Auth
+    return await adaptive_planner.trigger_replan(user_id)
+
 
 
 # --- Subjects ---

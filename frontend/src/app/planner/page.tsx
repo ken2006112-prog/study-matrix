@@ -3,25 +3,57 @@
 import { useState, useEffect } from "react";
 import { TaskLayout } from "@/components/tasks/TaskLayout";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Loader2, Calendar as CalendarIcon, BookOpen } from "lucide-react";
+import { Sparkles, Loader2, Calendar as CalendarIcon, BookOpen, AlertTriangle, RefreshCw } from "lucide-react";
 import { format, isSameWeek } from "date-fns";
+
+interface DeviationInfo {
+    deviation: number;
+    plannedHours: number;
+    actualHours: number;
+    status: string;
+    message: string;
+}
 
 export default function PlannerPage() {
     const [generating, setGenerating] = useState(false);
     const [roadmap, setRoadmap] = useState<any[]>([]);
+    const [deviation, setDeviation] = useState<DeviationInfo | null>(null);
+    const [replanning, setReplanning] = useState(false);
 
     useEffect(() => {
         fetchRoadmap();
+        fetchDeviation();
     }, []);
+
+    const fetchDeviation = async () => {
+        try {
+            const res = await fetch("http://localhost:8000/api/v1/planner/check-deviation");
+            if (res.ok) setDeviation(await res.json());
+        } catch (e) {
+            console.error("Failed to fetch deviation", e);
+        }
+    };
+
+    const handleReplan = async () => {
+        if (!confirm("This will redistribute your tasks based on exam urgency. Continue?")) return;
+        setReplanning(true);
+        try {
+            const res = await fetch("http://localhost:8000/api/v1/planner/replan", { method: "POST" });
+            if (res.ok) {
+                alert("Tasks have been replanned!");
+                window.location.reload();
+            }
+        } catch (e) {
+            alert("Failed to replan");
+        } finally {
+            setReplanning(false);
+        }
+    };
 
     const fetchRoadmap = async () => {
         try {
-            const res = await fetch("http://localhost:8000/api/v1/setup/planner/roadmap"); // Wait, path might be wrong, checking router
-            // Route is actually in `planner` router but under `setup` prefix? No, `planner` router is separate.
-            // checking main.py... `prefix="/api/v1/planner"` likely used for planner router?
-            // Wait, I need to check main.py prefixes.
-            const resCorrect = await fetch("http://localhost:8000/api/v1/planner/roadmap");
-            if (resCorrect.ok) setRoadmap(await resCorrect.json());
+            const res = await fetch("http://localhost:8000/api/v1/planner/roadmap");
+            if (res.ok) setRoadmap(await res.json());
         } catch (e) {
             console.error(e);
         }
@@ -43,7 +75,29 @@ export default function PlannerPage() {
         <div className="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-background">
             {/* Main Task List (Daily View) */}
             <div className="flex-1 border-r relative">
-                <div className="flex items-center justify-between p-4 border-b bg-card/50 backdrop-blur-sm absolute w-full z-10 top-0 left-0">
+                {/* Deviation Alert Banner */}
+                {deviation && deviation.status === "behind" && (
+                    <div className="absolute top-0 left-0 right-0 z-20 bg-amber-500/90 text-white px-4 py-3 flex items-center justify-between gap-4 backdrop-blur-sm">
+                        <div className="flex items-center gap-3">
+                            <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                            <div>
+                                <p className="font-medium">You're {Math.round(deviation.deviation * 100)}% behind schedule</p>
+                                <p className="text-xs opacity-90">Planned: {deviation.plannedHours}h | Actual: {deviation.actualHours}h</p>
+                            </div>
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={handleReplan}
+                            disabled={replanning}
+                        >
+                            {replanning ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-1" />}
+                            Auto-Replan
+                        </Button>
+                    </div>
+                )}
+
+                <div className={`flex items-center justify-between p-4 border-b bg-card/50 backdrop-blur-sm absolute w-full z-10 left-0 ${deviation?.status === "behind" ? "top-14" : "top-0"}`}>
                     <h1 className="font-bold text-lg flex items-center gap-2">
                         <CalendarIcon className="w-5 h-5 text-primary" />
                         Smart Planner
@@ -53,7 +107,7 @@ export default function PlannerPage() {
                         {roadmap.length > 0 ? "Regenerate Plan" : "Auto-Generate Schedule"}
                     </Button>
                 </div>
-                <div className="pt-16 h-full">
+                <div className={`h-full ${deviation?.status === "behind" ? "pt-28" : "pt-16"}`}>
                     <TaskLayout />
                 </div>
             </div>
