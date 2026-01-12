@@ -3,8 +3,6 @@ import os
 from typing import List, Optional
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
 from app.db import db
 import shutil
@@ -15,15 +13,25 @@ UPLOAD_DIR = os.path.join(os.getcwd(), "data/uploads")
 
 class RAGService:
     def __init__(self):
-        self.embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        self._embeddings = None  # Lazy initialization
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=1000,
             chunk_overlap=200,
             add_start_index=True,
         )
 
+    @property
+    def embeddings(self):
+        """Lazy load embeddings to allow server startup without OPENAI_API_KEY"""
+        if self._embeddings is None:
+            from langchain_openai import OpenAIEmbeddings
+            from langchain_community.vectorstores import Chroma
+            self._embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+        return self._embeddings
+
     def _get_vectorstore(self):
         """Get or create Chroma vectorstore instance"""
+        from langchain_community.vectorstores import Chroma
         return Chroma(
             persist_directory=CHROMA_PATH,
             embedding_function=self.embeddings

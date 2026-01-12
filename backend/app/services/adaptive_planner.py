@@ -18,10 +18,10 @@ class AdaptivePlanner:
         now = datetime.now()
         week_ago = now - timedelta(days=7)
         
-        # Get study plans for the past week
+        # Get study plans for the past week (query via exam->subject->userId relation)
         plans = await db.studyplan.find_many(
             where={
-                "userId": user_id,
+                "exam": {"subject": {"userId": user_id}},
                 "weekStart": {"gte": week_ago}
             }
         )
@@ -30,15 +30,15 @@ class AdaptivePlanner:
         sessions = await db.studysession.find_many(
             where={
                 "userId": user_id,
-                "createdAt": {"gte": week_ago}
+                "startTime": {"gte": week_ago}
             }
         )
         
         # Calculate planned hours (from StudyPlan)
-        planned_hours = sum(p.targetHours or 0 for p in plans)
+        planned_hours = sum(p.totalHours or 0 for p in plans)
         
-        # Calculate actual hours (from StudySessions)
-        actual_minutes = sum(s.actualDuration or 0 for s in sessions)
+        # Calculate actual hours (from StudySessions - using 'duration' field)
+        actual_minutes = sum(s.duration or 0 for s in sessions)
         actual_hours = actual_minutes / 60
         
         if planned_hours == 0:

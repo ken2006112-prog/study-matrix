@@ -54,6 +54,7 @@ model Subject {
   tasks     Task[]
   exams     Exam[]
   materials Material[]
+  concepts  Concept[]
   
   // Smart Planner Metadata
   priority    Int      @default(1) // 1: Normal, 2: High, 3: Core (20%)
@@ -224,6 +225,7 @@ model Concept {
   id          Int      @id @default(autoincrement())
   name        String
   subjectId   Int
+  subject     Subject  @relation(fields: [subjectId], references: [id])
   importance  Float    @default(0.5) // 80-20 Rule weight
   tags        Tag[]    @relation("ConceptTags")
   
