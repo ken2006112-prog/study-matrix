@@ -1,0 +1,662 @@
+/* 
+ * Morandi Color Palette Design System
+ * 莫蘭迪色調 - 低飽和度、柔和優雅
+ * Inspired by Giorgio Morandi's paintings
+ */
+
+@import "tailwindcss";
+
+/* ===================================
+   Theme Extension - Morandi Palette
+   =================================== */
+@theme {
+  /* Light mode - Warm creamy tones */
+  --color-background: hsl(40 30% 97%);
+  --color-foreground: hsl(30 10% 25%);
+  --color-card: hsl(40 25% 98%);
+  --color-card-foreground: hsl(30 10% 25%);
+  --color-popover: hsl(40 25% 98%);
+  --color-popover-foreground: hsl(30 10% 25%);
+  --color-primary: hsl(160 20% 50%);
+  /* Sage Green 鼠尾草綠 */
+  --color-primary-foreground: hsl(40 30% 97%);
+  --color-secondary: hsl(30 15% 92%);
+  /* Warm Beige 暖米色 */
+  --color-secondary-foreground: hsl(30 10% 35%);
+  --color-muted: hsl(30 10% 90%);
+  --color-muted-foreground: hsl(30 8% 50%);
+  --color-accent: hsl(350 20% 75%);
+  /* Dusty Rose 乾燥玫瑰 */
+  --color-accent-foreground: hsl(30 10% 25%);
+  --color-destructive: hsl(0 30% 55%);
+  /* Muted Red */
+  --color-destructive-foreground: hsl(40 30% 97%);
+  --color-border: hsl(30 15% 85%);
+  --color-input: hsl(30 15% 88%);
+  --color-ring: hsl(160 20% 50%);
+  --radius: 12px;
+}
+
+/* ===================================
+   CSS Variables - Morandi Design Tokens
+   =================================== */
+:root {
+  /* Soft shadows */
+  --shadow-subtle: 0 1px 3px rgba(120, 100, 80, 0.06);
+  --shadow-medium: 0 4px 12px rgba(120, 100, 80, 0.08);
+  --shadow-large: 0 8px 30px rgba(120, 100, 80, 0.12);
+  --shadow-glow: 0 0 40px rgba(130, 160, 140, 0.15);
+
+  /* Morandi gradients - subtle and muted */
+  --gradient-primary: linear-gradient(135deg, hsl(160 20% 50%) 0%, hsl(180 15% 55%) 100%);
+  --gradient-success: linear-gradient(135deg, hsl(140 20% 55%) 0%, hsl(160 15% 50%) 100%);
+  --gradient-warning: linear-gradient(135deg, hsl(35 35% 60%) 0%, hsl(20 30% 55%) 100%);
+  --gradient-purple: linear-gradient(135deg, hsl(280 15% 60%) 0%, hsl(320 12% 55%) 100%);
+  --gradient-cyan: linear-gradient(135deg, hsl(190 20% 55%) 0%, hsl(210 15% 50%) 100%);
+  --gradient-rose: linear-gradient(135deg, hsl(350 20% 70%) 0%, hsl(10 22% 65%) 100%);
+  --gradient-mesh: radial-gradient(at 40% 20%, hsla(160, 20%, 50%, 0.06) 0px, transparent 50%),
+    radial-gradient(at 80% 0%, hsla(350, 20%, 70%, 0.05) 0px, transparent 50%),
+    radial-gradient(at 0% 50%, hsla(40, 30%, 70%, 0.05) 0px, transparent 50%);
+
+  /* Morandi color palette - 完整調色盤 */
+  --morandi-sage: hsl(160 20% 50%);
+  /* 鼠尾草綠 */
+  --morandi-sage-light: hsl(160 20% 85%);
+  --morandi-sage-dark: hsl(160 20% 35%);
+
+  --morandi-rose: hsl(350 20% 70%);
+  /* 乾燥玫瑰 */
+  --morandi-rose-light: hsl(350 20% 88%);
+  --morandi-rose-dark: hsl(350 20% 50%);
+
+  --morandi-blue: hsl(210 18% 60%);
+  /* 霧霾藍 */
+  --morandi-blue-light: hsl(210 18% 85%);
+  --morandi-blue-dark: hsl(210 18% 40%);
+
+  --morandi-beige: hsl(35 25% 75%);
+  /* 奶茶色 */
+  --morandi-beige-light: hsl(35 25% 90%);
+  --morandi-beige-dark: hsl(35 25% 55%);
+
+  --morandi-grey: hsl(30 8% 55%);
+  /* 暖灰 */
+  --morandi-grey-light: hsl(30 8% 80%);
+  --morandi-grey-dark: hsl(30 8% 35%);
+
+  --morandi-terracotta: hsl(20 25% 55%);
+  /* 陶土色 */
+  --morandi-terracotta-light: hsl(20 25% 80%);
+  --morandi-terracotta-dark: hsl(20 25% 40%);
+
+  --morandi-lavender: hsl(280 15% 65%);
+  /* 薰衣草紫 */
+  --morandi-lavender-light: hsl(280 15% 85%);
+  --morandi-lavender-dark: hsl(280 15% 45%);
+
+  --morandi-olive: hsl(80 15% 45%);
+  /* 橄欖綠 */
+  --morandi-olive-light: hsl(80 15% 75%);
+  --morandi-olive-dark: hsl(80 15% 30%);
+
+  --morandi-cream: hsl(40 30% 92%);
+  /* 奶油白 */
+  --morandi-sand: hsl(45 20% 70%);
+  /* 沙色 */
+  --morandi-moss: hsl(120 12% 50%);
+  /* 苔蘚綠 */
+  --morandi-clay: hsl(15 18% 50%);
+  /* 黏土色 */
+}
+
+.dark {
+  /* Dark mode - Muted warm tones */
+  --color-background: hsl(30 8% 8%);
+  --color-foreground: hsl(40 15% 90%);
+  --color-card: hsl(30 10% 12%);
+  --color-card-foreground: hsl(40 15% 90%);
+  --color-popover: hsl(30 10% 12%);
+  --color-popover-foreground: hsl(40 15% 90%);
+  --color-primary: hsl(160 22% 55%);
+  /* Sage Green */
+  --color-primary-foreground: hsl(30 8% 8%);
+  --color-secondary: hsl(30 10% 18%);
+  --color-secondary-foreground: hsl(40 15% 85%);
+  --color-muted: hsl(30 8% 18%);
+  --color-muted-foreground: hsl(30 10% 55%);
+  --color-accent: hsl(350 18% 55%);
+  /* Dusty Rose */
+  --color-accent-foreground: hsl(40 15% 90%);
+  --color-destructive: hsl(0 25% 50%);
+  --color-destructive-foreground: hsl(40 15% 90%);
+  --color-border: hsl(30 10% 20%);
+  --color-input: hsl(30 10% 20%);
+  --color-ring: hsl(160 22% 55%);
+  --shadow-glow: 0 0 40px rgba(130, 160, 140, 0.2);
+}
+
+/* ===================================
+   Base Styles
+   =================================== */
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-background);
+  background-image: var(--gradient-mesh);
+  color: var(--color-foreground);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  letter-spacing: -0.01em;
+}
+
+/* Apple-style headings */
+h1 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* Links */
+a {
+  color: var(--color-primary);
+  transition: opacity 0.2s;
+}
+
+a:hover {
+  opacity: 0.8;
+  text-decoration: none;
+}
+
+/* ===================================
+   Premium Components
+   =================================== */
+
+/* Card with gradient border */
+.apple-card {
+  background-color: var(--color-card);
+  border-radius: 1rem;
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  box-shadow: var(--shadow-subtle);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.apple-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.apple-card:hover {
+  box-shadow: var(--shadow-medium);
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+/* Premium card with glow */
+.premium-card {
+  background: linear-gradient(135deg, var(--color-card) 0%, color-mix(in srgb, var(--color-card) 95%, var(--color-primary)) 100%);
+  border-radius: 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+  box-shadow: var(--shadow-medium), var(--shadow-glow);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.premium-card:hover {
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: var(--shadow-large), 0 0 60px rgba(0, 122, 255, 0.2);
+}
+
+/* Glass morphism (enhanced) */
+.apple-glass {
+  background: color-mix(in srgb, var(--color-background) 70%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 30%, transparent);
+}
+
+/* Gradient button */
+.gradient-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  border-radius: 0.875rem;
+  font-weight: 600;
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.gradient-button::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.gradient-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 122, 255, 0.4);
+}
+
+.gradient-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Pill button (compact) */
+.apple-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-foreground);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-pill:hover {
+  background-color: color-mix(in srgb, var(--color-secondary) 80%, var(--color-primary));
+  transform: scale(1.02);
+}
+
+.apple-pill.active {
+  background: var(--gradient-primary);
+  color: white;
+  box-shadow: 0 2px 10px rgba(0, 122, 255, 0.3);
+}
+
+/* Large button (Apple style) */
+.apple-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.875rem;
+  font-weight: 600;
+  background-color: var(--color-primary);
+  color: var(--color-primary-foreground);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+}
+
+.apple-button:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
+}
+
+.apple-button:active {
+  transform: scale(0.98);
+}
+
+.apple-button-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.5rem;
+  border-radius: 0.875rem;
+  font-weight: 600;
+  background-color: var(--color-secondary);
+  color: var(--color-secondary-foreground);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-button-secondary:hover {
+  background-color: color-mix(in srgb, var(--color-secondary) 80%, transparent);
+  transform: translateY(-1px);
+}
+
+/* Input field (enhanced) */
+.apple-input {
+  width: 100%;
+  padding: 0.875rem 1.25rem;
+  border-radius: 0.875rem;
+  background-color: color-mix(in srgb, var(--color-secondary) 60%, transparent);
+  border: 1px solid transparent;
+  color: var(--color-foreground);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-input::placeholder {
+  color: var(--color-muted-foreground);
+}
+
+.apple-input:focus {
+  outline: none;
+  background-color: var(--color-background);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  border-color: var(--color-primary);
+}
+
+/* Segmented control */
+.apple-segmented {
+  display: inline-flex;
+  padding: 0.25rem;
+  border-radius: 0.75rem;
+  background-color: var(--color-secondary);
+}
+
+.apple-segmented-item {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-muted-foreground);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-segmented-item.active {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Stats card */
+.stats-card {
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: linear-gradient(135deg, var(--color-secondary) 0%, color-mix(in srgb, var(--color-secondary) 90%, var(--color-primary)) 100%);
+  border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
+  transition: all 0.3s;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-medium);
+}
+
+.stats-card .value {
+  font-size: 2rem;
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Progress bar (enhanced) */
+.apple-progress {
+  height: 0.375rem;
+  background-color: var(--color-secondary);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.apple-progress-bar {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 9999px;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.apple-progress-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Badge (enhanced) */
+.apple-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 15%, transparent), color-mix(in srgb, var(--color-primary) 10%, transparent));
+  color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+
+/* Floating action button */
+.fab {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 50%;
+  background: var(--gradient-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0, 122, 255, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 50;
+}
+
+.fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 30px rgba(0, 122, 255, 0.5);
+}
+
+/* ===================================
+   Premium Animations
+   =================================== */
+
+/* Smooth spring animation */
+.animate-spring {
+  animation: spring 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes spring {
+  0% {
+    transform: scale(0.9);
+    opacity: 0;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Fade in up */
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Slide in from right */
+.animate-slide-in {
+  animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  0% {
+    transform: translateX(20px);
+    opacity: 0;
+  }
+
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Subtle float */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+/* Glow pulse */
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 20px rgba(0, 122, 255, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 40px rgba(0, 122, 255, 0.5);
+  }
+}
+
+/* Stagger children */
+.stagger-children>* {
+  opacity: 0;
+  animation: fadeInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.stagger-children>*:nth-child(1) {
+  animation-delay: 0.05s;
+}
+
+.stagger-children>*:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.stagger-children>*:nth-child(3) {
+  animation-delay: 0.15s;
+}
+
+.stagger-children>*:nth-child(4) {
+  animation-delay: 0.2s;
+}
+
+.stagger-children>*:nth-child(5) {
+  animation-delay: 0.25s;
+}
+
+.stagger-children>*:nth-child(6) {
+  animation-delay: 0.3s;
+}
+
+/* ===================================
+   Scrollbar (Apple style)
+   =================================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--color-muted-foreground) 30%, transparent);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-muted-foreground) 50%, transparent);
+}
+
+/* Hide scrollbar when not scrolling */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* ===================================
+   Utility Classes
+   =================================== */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bg-gradient {
+  background: var(--gradient-primary);
+}
+
+.bg-gradient-subtle {
+  background: linear-gradient(135deg,
+      color-mix(in srgb, var(--color-primary) 5%, transparent),
+      color-mix(in srgb, var(--color-primary) 10%, transparent));
+}
+
+.border-gradient {
+  border: 1px solid;
+  border-image: var(--gradient-primary) 1;
+}
+
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
