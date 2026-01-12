@@ -32,7 +32,7 @@ class CheckInRequest(BaseModel):
     stressLevel: int # 1-10
     mood: str # e.g. "CALM"
 
-router = APIRouter(prefix="/study", tags=["Study Agent"])
+router = APIRouter(tags=["Study Agent"])
 coach = SocraticCoach()
 
 @router.post("/next-task")

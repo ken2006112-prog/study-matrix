@@ -4,7 +4,7 @@ from typing import List, Optional
 from datetime import datetime
 from app.db import db
 
-router = APIRouter(prefix="/setup", tags=["Setup Wizard"])
+router = APIRouter(tags=["Setup Wizard"])
 
 # --- Pydantic Models for Setup ---
 
