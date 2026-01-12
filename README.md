@@ -1,263 +1,105 @@
-# 🧠 AI Learning Assistant
+# Study Matrix - AI 學習助手
 
-> An intelligent, data-driven learning platform that adapts to your study patterns and optimizes effectiveness through science-backed algorithms.
-
-![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Python](https://img.shields.io/badge/python-3.9+-blue.svg)
-![Next.js](https://img.shields.io/badge/next.js-14-black.svg)
+> 基於認知科學的智能學習平台
 
 ---
 
-## ✨ Features
+## 🚀 快速開始
 
-### 📋 Smart Task Management
-- **TickTick-style Interface**: 3-column layout with smart lists (Inbox, Today, Next 7 Days)
-- **Subject Integration**: Filter and organize tasks by subject
-- **Date Grouping**: Automatic categorization (Overdue, Today, Tomorrow, This Week)
-- **Priority System**: Visual priority flags (High/Medium/Low)
-
-### ⏱️ Enhanced Study Timer
-- **Pomodoro Mode**: Customizable intervals (15/25/45/60 minutes)
-- **Interruption Tracking**: Monitor focus quality
-- **Time Accuracy**: Real-time comparison of planned vs actual time
-- **Automatic Logging**: Session data saved for analysis
-
-### 📊 Analytics Dashboard
-- **Study Metrics**: Total hours, task completion, success rates
-- **Time Honesty Analysis**: Track estimation accuracy
-- **Subject Progress**: Visual progress bars per subject
-- **Concept Cloud**: AI-powered keyword extraction from study materials
-
-### 🧠 FSRS-4.5 Spaced Repetition
-- **Science-Based Algorithm**: Optimal review scheduling
-- **Memory Modeling**: Stability and difficulty calculations
-- **Retrievability Prediction**: Know when you'll forget
-- **Adaptive Intervals**: Personalized review timing
-
-### 🎓 Semester Configuration
-- **Onboarding Wizard**: 5-step conversational setup
-- **Exam Management**: Track midterms and finals
-- **Learning Preferences**: Visual/Reading/Practice/Discussion
-- **Time Planning**: Weekly availability assessment
-
----
-
-## 🏗️ Tech Stack
-
-### Backend
-- **Framework**: FastAPI (Python 3.9+)
-- **Database**: SQLite with Prisma ORM
-- **Algorithms**: Custom FSRS-4.5 implementation
-- **NLP**: Concept extraction and analysis
-
-### Frontend
-- **Framework**: Next.js 14 with React 19
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **UI Components**: Radix UI, Lucide Icons
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Python 3.9+
-- Node.js 16+
-- npm or yarn
-
-### Installation
-
-1. **Clone the repository**
+### 後端
 ```bash
-git clone https://github.com/ken2006112-prog/study-matrix.git
-cd study-matrix
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+prisma generate
+prisma migrate dev
+uvicorn app.main:app --reload --port 8000
 ```
 
-2. **Run the development script**
+### 前端
 ```bash
-bash start_dev.sh
-```
-
-This will:
-- Set up Python virtual environment
-- Install backend dependencies
-- Generate Prisma client
-- Install frontend dependencies
-- Start both servers concurrently
-
-3. **Access the application**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
----
-
-## 📖 Usage
-
-### Dashboard (`/dashboard`)
-- **Study Timer**: Select subject, set duration, start focusing
-- **Analytics**: View study statistics and Time Honesty ratio
-- **Concept Extraction**: Paste text to generate knowledge cloud
-
-### Planner (`/planner`)
-- **Create Tasks**: Add tasks with subjects, due dates, priorities
-- **Filter by Subject**: Click subjects in sidebar to filter
-- **Smart Lists**: View tasks by Inbox/Today/Next 7 Days
-
-### Flashcards (`/flashcards`)
-- **Create Cards**: Front/back with subject association
-- **Review**: Rate recall (Again/Hard/Good/Easy)
-- **FSRS Scheduling**: Automatic optimal interval calculation
-
----
-
-## 📊 Data Models
-
-### Core Models
-- **User**: Profile and preferences
-- **Subject**: Courses with color coding
-- **Task**: Todos with subject, priority, due date
-- **StudySession**: Timer logs with interruption tracking
-- **Flashcard**: FSRS-enhanced review cards
-- **SemesterConfig**: Semester setup and preferences
-- **Exam**: Midterm/final tracking per subject
-
-### FSRS Fields
-- `stability`: Memory stability (days)
-- `difficulty`: Learning difficulty (1-10)
-- `retrievability`: Recall probability (0-1)
-- `due`: Next optimal review date
-
----
-
-## 📚 Documentation
-
-- **[User Guide](/.gemini/antigravity/brain/12974af3-5a73-4c25-8e28-93ebcf470ccf/user_guide.md)**: Complete usage instructions
-- **[System Overview](/.gemini/antigravity/brain/12974af3-5a73-4c25-8e28-93ebcf470ccf/complete_summary.md)**: Architecture and features
-- **[Walkthrough](/.gemini/antigravity/brain/12974af3-5a73-4c25-8e28-93ebcf470ccf/walkthrough.md)**: Feature demonstrations
-- **[Master Plan](/.gemini/antigravity/brain/12974af3-5a73-4c25-8e28-93ebcf470ccf/master_plan.md)**: Development roadmap
-
----
-
-## 🎯 Key Metrics
-
-Track your learning effectiveness:
-- ✅ **Time Honesty**: ≥80% (planned vs actual)
-- ✅ **Focus Quality**: ≤2 interruptions/hour
-- ✅ **Task Completion**: ≥70% weekly
-- ✅ **Flashcard Success**: ≥85% retention
-
----
-
-## 🔧 API Endpoints
-
-### Tasks
-```
-GET    /api/v1/tasks?subjectId={id}
-POST   /api/v1/tasks
-PUT    /api/v1/tasks/{id}
-DELETE /api/v1/tasks/{id}
-```
-
-### Flashcards
-```
-GET  /api/v1/cards/due
-POST /api/v1/cards/reviews
-GET  /api/v1/cards/stats
-```
-
-### Analytics
-```
-GET /api/v1/analytics/summary
-GET /api/v1/analytics/weekly_report
-GET /api/v1/analytics/recommendations
+cd frontend
+npm install
+npm run dev
 ```
 
 ---
 
-## 🧪 FSRS Algorithm
+## 📋 功能總覽
 
-The Free Spaced Repetition Scheduler optimizes review intervals:
-
-```python
-# Memory stability calculation
-stability = f(old_stability, difficulty, rating, state)
-
-# Optimal interval
-interval = stability × 9 × (1/retention - 1)
-
-# Current retrievability
-retrievability = (1 + elapsed/(9×stability))^-1
-```
-
-**Rating Scale:**
-- **Again (1)**: Complete blackout → 1 day
-- **Hard (2)**: Difficult recall → Short interval
-- **Good (3)**: Normal recall → Standard interval
-- **Easy (4)**: Perfect recall → Long interval
+| 功能 | 說明 | 頁面 |
+|------|------|------|
+| 📅 學習日曆 | Google Calendar 風格，考試管理 | `/calendar` |
+| 🎯 艾森豪矩陣 | 四象限任務管理 | `/matrix` |
+| 📚 閃卡系統 | FSRS 間隔重複算法 | `/flashcards` |
+| 📈 週報分析 | AI 學習分析+建議 | `/reports` |
+| 🧠 AI 教練 | 全數據分析+個性化建議 | `/coach` |
+| 📂 教材上傳 | 自動生成閃卡 | `/materials` |
+| ⏱️ 學習計時 | 番茄鐘+專注模式 | `/dashboard` |
 
 ---
 
-## 🛠️ Development
+## 🏗️ 技術架構
 
-### Project Structure
+```
+┌─────────────┐     ┌─────────────┐
+│   Next.js   │────▶│   FastAPI   │
+│  Frontend   │     │   Backend   │
+└─────────────┘     └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │   Prisma    │
+                    │   SQLite    │
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │   OpenAI    │
+                    │    API      │
+                    └─────────────┘
+```
+
+---
+
+## 📁 專案結構
+
 ```
 study-matrix/
-├── backend/
+├── backend/           # Python FastAPI
 │   ├── app/
-│   │   ├── routers/       # API endpoints
-│   │   ├── utils/         # FSRS algorithm
-│   │   └── services/      # NLP, analytics
-│   └── prisma/
-│       └── schema.prisma  # Database schema
-├── frontend/
+│   │   ├── routers/  # 18 個 API 路由
+│   │   ├── services/ # 7 個業務服務
+│   │   └── main.py   # 應用入口
+│   └── prisma/       # 資料庫 Schema
+│
+├── frontend/          # Next.js React
 │   └── src/
-│       ├── app/           # Next.js pages
-│       └── components/    # React components
-└── start_dev.sh           # Development launcher
+│       ├── app/      # 18 個頁面
+│       └── components/ # 30+ 組件
+│
+└── docker-compose.yml
 ```
 
-### Adding Features
-1. Update database schema in `backend/prisma/schema.prisma`
-2. Run `prisma db push` and `prisma generate`
-3. Create API endpoints in `backend/app/routers/`
-4. Build frontend components in `frontend/src/components/`
-5. Update documentation
+---
+
+## 🔑 環境變數
+
+```env
+# backend/.env
+DATABASE_URL="file:../edumate.db"
+OPENAI_API_KEY="sk-..."
+JWT_SECRET="your-secret"
+```
 
 ---
 
-## 🤝 Contributing
+## 📖 文檔
 
-Contributions welcome! Please:
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push and create a Pull Request
+- [系統架構](/.gemini/brain/.../system_architecture.md)
+- [設計原則](/.gemini/brain/.../design_principles.md)
 
 ---
 
-## 📝 License
+## 📄 License
 
-MIT License - See [LICENSE](LICENSE) for details
-
----
-
-## 🎓 Learning Science
-
-This system implements evidence-based learning techniques:
-- **Spaced Repetition**: FSRS-4.5 algorithm
-- **Active Recall**: Question-driven review
-- **Metacognition**: Time Honesty analysis
-- **Progress Tracking**: Data-driven insights
-
----
-
-## 🌟 Acknowledgments
-
-- FSRS algorithm by [Jarrett Ye](https://github.com/open-spaced-repetition/fsrs4anki)
-- UI inspiration from TickTick
-- Built with modern web technologies
-
----
-
-**Made with ❤️ for effective learning**
+MIT

@@ -12,14 +12,34 @@ datasource db {
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
+  password  String?  // Hashed, nullable for OAuth users
   name      String?
+  avatar    String?
+  provider  String   @default("email") // "email", "google"
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
   sessions  StudySession[]
   subjects  Subject[]
   flashcards Flashcard[]
   tasks     Task[]
   semesterConfig SemesterConfig?
+  memory    UserMemory?
+  wellbeingLog UserWellbeing[]
 }
+
+model UserMemory {
+  id              Int      @id @default(autoincrement())
+  userId          Int      @unique
+  user            User     @relation(fields: [userId], references: [id])
+  weakConcepts    String   @default("[]") // JSON array
+  strongConcepts  String   @default("[]") // JSON array
+  preferences     String   @default("{}") // JSON object
+  focusScore      Int      @default(70)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
 
 model Subject {
   id        Int      @id @default(autoincrement())
@@ -42,6 +62,11 @@ model StudySession {
   plannedDuration Int? // In minutes (Target)
   isFocusMode Boolean @default(false)
   interruptions Int @default(0) // Number of pauses/interruptions
+  
+  // 1.2 Neural Fatigue
+  cognitiveLoad String @default("MEDIUM") // "HIGH", "MEDIUM", "LOW"
+  fatigueLevel  Int?   // 1-10 (Self-reported at end)
+  
   subjectId Int
   subject   Subject  @relation(fields: [subjectId], references: [id])
   userId    Int
@@ -70,6 +95,7 @@ model Flashcard {
   due       DateTime @default(now())
   
   tags      Tag[]
+  reviews   FlashcardReview[]
 }
 
 model Tag {
@@ -77,6 +103,7 @@ model Tag {
   name      String   @unique
   subjects  Subject[]
   flashcards Flashcard[]
+  concepts   Concept[] @relation("ConceptTags")
 }
 
 model Task {
@@ -119,4 +146,106 @@ model Exam {
   weight      Int      @default(0) // Percentage weight (0-100)
   topics      String?  // JSON array of topics
   createdAt   DateTime @default(now())
+  
+  // Chapters to study for this exam
+  startChapter Int?
+  endChapter   Int?
+  textbookId   Int?
+  textbook     Textbook? @relation(fields: [textbookId], references: [id])
+  studyPlans   StudyPlan[]
 }
+
+model Textbook {
+  id          Int      @id @default(autoincrement())
+  title       String
+  subjectId   Int
+  totalChapters Int    @default(10)
+  chapters    Chapter[]
+  exams       Exam[]
+  createdAt   DateTime @default(now())
+}
+
+model Chapter {
+  id          Int      @id @default(autoincrement())
+  textbookId  Int
+  textbook    Textbook @relation(fields: [textbookId], references: [id])
+  number      Int      // Chapter number
+  title       String
+  importance  Float    @default(0.5) // 0-1, for 80/20 rule priority
+  estimatedHours Float @default(2)   // Estimated study hours
+  concepts    String   @default("[]") // JSON array of key concepts
+  isCore      Boolean  @default(false) // True if this is a "20%" core chapter
+}
+
+model StudyPlan {
+  id          Int      @id @default(autoincrement())
+  examId      Int
+  exam        Exam     @relation(fields: [examId], references: [id])
+  weekNumber  Int      // Week of the plan (1, 2, 3...)
+  weekStart   DateTime
+  weekEnd     DateTime
+  chaptersToStudy String @default("[]") // JSON array of chapter IDs
+  totalHours  Float    // Target hours for this week
+  priority    String   // "core" (20%), "support" (30%), "detail" (50%)
+  tasks       String   @default("[]") // JSON array of specific tasks
+  isCompleted Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+// 🧠 Neuroscience & Cognitive Science Extensions
+
+// 1.1 Memory Consolidation & Emotion Check-in
+model UserWellbeing {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  date        DateTime @default(now())
+  sleepHours  Float?
+  sleepQuality Int?    // 1-10
+  stressLevel Int?     // 1-10
+  mood        String?  // Text description or enum
+  energyLevel Int?     // 1-10 (For neural fatigue tracking)
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+// 2.4 Knowledge Structure (Schema Formation)
+model Concept {
+  id          Int      @id @default(autoincrement())
+  name        String
+  subjectId   Int
+  tags        Tag[]    @relation("ConceptTags")
+  
+  // Relations to other concepts
+  outgoing    ConceptRelation[] @relation("source")
+  incoming    ConceptRelation[] @relation("target")
+  
+  description String?
+  createdAt   DateTime @default(now())
+}
+
+model ConceptRelation {
+  id          Int      @id @default(autoincrement())
+  sourceId    Int
+  targetId    Int
+  source      Concept  @relation("source", fields: [sourceId], references: [id])
+  target      Concept  @relation("target", fields: [targetId], references: [id])
+  
+  type        String   // "CAUSES", "PART_OF", "SIMILAR_TO", "PREREQUISITE"
+  strength    Float    @default(0.5) // 0-1.0 Connection strength
+  createdAt   DateTime @default(now())
+}
+
+// 2.3 Metacognitive Calibration
+model FlashcardReview {
+  id          Int      @id @default(autoincrement())
+  flashcardId Int
+  flashcard   Flashcard @relation(fields: [flashcardId], references: [id])
+  
+  rating      Int      // FSRS rating (1-4)
+  confidence  Int?     // 0-100% Pre-answer confidence
+  actualResult Boolean // True/False
+  
+  duration    Int      // milliseconds
+  reviewedAt  DateTime @default(now())
+}
+

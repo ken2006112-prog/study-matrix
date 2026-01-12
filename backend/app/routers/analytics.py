@@ -49,12 +49,11 @@ async def get_analytics_summary():
 
 from app.services.report import report_service
 
-@router.get("/weekly_report")
-async def get_weekly_report():
-    # In real app: get user from auth
-    user_id = 1
-    report = await report_service.generate_weekly_report(user_id)
-    return {"report": report}
+@router.get("/weekly-report")
+async def get_weekly_report(userId: int = 1):
+    """Generate comprehensive weekly learning report with AI analysis"""
+    report = await report_service.generate_weekly_report(userId)
+    return report
 
 from app.services.recommendations import recommendation_service
 

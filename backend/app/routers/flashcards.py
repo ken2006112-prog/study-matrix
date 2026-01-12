@@ -69,10 +69,10 @@ async def get_stats():
         "success_rate": round(success_rate, 1)
     }
 
-@router.post("/reviews/")
-async def submit_review(review: ReviewRequest):
+@router.post("/{card_id}/review")
+async def submit_review(card_id: int, review: ReviewRequest):
     """Submit a flashcard review using FSRS algorithm"""
-    card_data = await db.flashcard.find_unique(where={'id': review.cardId})
+    card_data = await db.flashcard.find_unique(where={'id': card_id})
     if not card_data:
         raise HTTPException(status_code=404, detail="Card not found")
     
