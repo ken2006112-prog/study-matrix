@@ -126,5 +126,6 @@ export default function ConceptsPage() {
 
                 {quizOpen && <QuizModal questions={quizQuestions} onClose={() => setQuizOpen(false)} />}
             </div>
-            );
+        </div>
+    );
 }
