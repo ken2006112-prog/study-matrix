@@ -1,220 +1,229 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Dict, Optional, Any
 import re
 from collections import Counter
 
 router = APIRouter()
 
-class AnalysisResult(BaseModel):
-    concepts: List[Dict[str, Any]]
-    keyTopics: List[str]
-    suggestedFlashcards: List[Dict[str, str]]
-    studyPlan: List[Dict[str, Any]]
-    twentyEightyAnalysis: Dict[str, Any]
+# === Models ===
+class ConceptWeight(BaseModel):
+    name: str
+    weight: float  # 0-100, higher = more important
+    category: str  # "core", "support", "detail"
+    examFrequency: int  # times appeared in past exams
+    chapterRef: Optional[str] = None
 
-class ExamPattern(BaseModel):
-    concept: str
-    frequency: int
-    weight: float
-    lastAppeared: Optional[str] = None
+class MaterialAnalysis(BaseModel):
+    title: str
+    totalConcepts: int
+    coreConcepts: List[ConceptWeight]  # 20% that covers 80%
+    supportConcepts: List[ConceptWeight]
+    detailConcepts: List[ConceptWeight]
+    suggestedStudyOrder: List[str]
+    tagCloud: List[Dict[str, Any]]
 
-# Simulated NLP extraction (in production, use spaCy or similar)
-def extract_concepts_from_text(text: str) -> List[Dict[str, Any]]:
-    """Extract key concepts from text using NLP techniques"""
-    # Simple keyword extraction based on frequency and patterns
-    words = re.findall(r'\b[A-Za-z\u4e00-\u9fff]{2,}\b', text)
+class ExamAnalysis(BaseModel):
+    examName: str
+    totalQuestions: int
+    topicDistribution: Dict[str, int]
+    highFrequencyTopics: List[str]
+    lowFrequencyTopics: List[str]
+    recommendations: List[str]
+
+# === NLP Utilities ===
+def extract_keywords(text: str, top_n: int = 30) -> List[Dict[str, Any]]:
+    """
+    Extract keywords from text using simple frequency analysis
+    In production, would use actual NLP models
+    """
+    # Common Chinese stop words
+    stop_words = {"的", "是", "在", "和", "了", "有", "這", "我", "他", "她", "它", 
+                  "們", "你", "會", "可以", "就", "也", "不", "但", "或", "如果",
+                  "因為", "所以", "而", "且", "則", "又", "並", "即", "此", "其"}
     
-    # Filter common stop words
-    stop_words = {'the', 'is', 'at', 'which', 'on', 'a', 'an', 'and', 'or', 'but', 
-                  '的', '是', '在', '了', '和', '有', '这', '那', '我', '你'}
-    filtered_words = [w for w in words if w.lower() not in stop_words]
+    # Extract Chinese words (simplified - in production use jieba or similar)
+    words = re.findall(r'[\u4e00-\u9fff]{2,6}', text)
     
-    # Count frequency
+    # Filter stop words and count
+    filtered_words = [w for w in words if w not in stop_words and len(w) >= 2]
     word_counts = Counter(filtered_words)
     
-    # Get top concepts
-    concepts = []
-    for word, count in word_counts.most_common(20):
-        importance = min(1.0, count / 10)  # Normalize importance
-        concepts.append({
-            "term": word,
-            "frequency": count,
-            "importance": round(importance, 2),
-            "category": categorize_concept(word)
-        })
+    # Get top N
+    top_words = word_counts.most_common(top_n)
+    max_count = top_words[0][1] if top_words else 1
     
-    return concepts
+    return [
+        {
+            "text": word,
+            "count": count,
+            "weight": round((count / max_count) * 100, 1)
+        }
+        for word, count in top_words
+    ]
 
-def categorize_concept(term: str) -> str:
-    """Categorize a concept based on patterns"""
-    # Math/Science keywords
-    math_keywords = ['函数', '积分', '微分', '方程', 'equation', 'function', 'derivative']
-    physics_keywords = ['力', '能量', 'energy', 'force', 'momentum', '动量']
+def categorize_concepts(keywords: List[Dict[str, Any]]) -> Dict[str, List[ConceptWeight]]:
+    """
+    Apply 20-80 principle to categorize concepts
+    """
+    total = len(keywords)
+    core_count = max(1, int(total * 0.2))
+    support_count = max(1, int(total * 0.3))
     
-    term_lower = term.lower()
+    result = {"core": [], "support": [], "detail": []}
     
-    if any(k in term_lower for k in math_keywords):
-        return "数学概念"
-    if any(k in term_lower for k in physics_keywords):
-        return "物理概念"
+    for i, kw in enumerate(keywords):
+        if i < core_count:
+            category = "core"
+        elif i < core_count + support_count:
+            category = "support"
+        else:
+            category = "detail"
+        
+        result[category].append(ConceptWeight(
+            name=kw["text"],
+            weight=kw["weight"],
+            category=category,
+            examFrequency=max(1, int(kw["weight"] / 10))  # Simulated
+        ))
     
-    return "一般概念"
+    return result
 
-def generate_flashcards_from_concepts(concepts: List[Dict]) -> List[Dict[str, str]]:
-    """Auto-generate flashcard suggestions from extracted concepts"""
-    flashcards = []
-    
-    for concept in concepts[:10]:  # Top 10 concepts
-        term = concept["term"]
-        flashcards.append({
-            "front": f"什么是 {term}？",
-            "back": f"[需要填写 {term} 的定义]",
-            "conceptCategory": concept["category"]
-        })
-        flashcards.append({
-            "front": f"举例说明 {term} 的应用",
-            "back": f"[需要填写 {term} 的应用实例]",
-            "conceptCategory": concept["category"]
-        })
-    
-    return flashcards
 
-def analyze_twenty_eighty(concepts: List[Dict]) -> Dict[str, Any]:
-    """Apply 20-80 principle to identify high-value concepts"""
-    if not concepts:
-        return {"highValue": [], "lowValue": [], "recommendation": ""}
+@router.post("/parse-material")
+async def parse_material(
+    title: str = Form("學習材料"),
+    content: str = Form(...)
+):
+    """
+    解析教材內容，提取關鍵概念並應用 20-80 原則
+    """
+    # Extract keywords
+    keywords = extract_keywords(content)
     
-    # Sort by importance
-    sorted_concepts = sorted(concepts, key=lambda x: x["importance"], reverse=True)
+    # Categorize by importance
+    categorized = categorize_concepts(keywords)
     
-    # Top 20% are high-value
-    cutoff = max(1, len(sorted_concepts) // 5)
-    high_value = sorted_concepts[:cutoff]
-    low_value = sorted_concepts[cutoff:]
+    # Generate tag cloud data
+    tag_cloud = [
+        {
+            "text": kw["text"],
+            "value": kw["weight"],
+            "category": "core" if i < len(keywords) * 0.2 else "support" if i < len(keywords) * 0.5 else "detail"
+        }
+        for i, kw in enumerate(keywords)
+    ]
     
-    total_importance = sum(c["importance"] for c in concepts)
-    high_value_importance = sum(c["importance"] for c in high_value)
+    # Suggested study order (core concepts first)
+    study_order = [c.name for c in categorized["core"]] + \
+                  [c.name for c in categorized["support"][:3]]
     
-    coverage = (high_value_importance / total_importance * 100) if total_importance > 0 else 0
+    return MaterialAnalysis(
+        title=title,
+        totalConcepts=len(keywords),
+        coreConcepts=categorized["core"],
+        supportConcepts=categorized["support"],
+        detailConcepts=categorized["detail"],
+        suggestedStudyOrder=study_order,
+        tagCloud=tag_cloud
+    )
+
+
+@router.post("/parse-exam")
+async def parse_exam(
+    examName: str = Form("歷屆試題"),
+    content: str = Form(...)
+):
+    """
+    解析歷屆試題，找出高頻考點
+    """
+    # Extract keywords (representing topics)
+    keywords = extract_keywords(content, top_n=20)
+    
+    # Simulate topic distribution
+    topic_dist = {kw["text"]: kw["count"] for kw in keywords[:15]}
+    
+    # High frequency (top 20%)
+    high_freq = [kw["text"] for kw in keywords[:max(1, len(keywords) // 5)]]
+    
+    # Low frequency (bottom 30%)
+    low_freq = [kw["text"] for kw in keywords[-(len(keywords) // 3):]]
+    
+    recommendations = [
+        f"「{high_freq[0]}」是高頻考點，建議優先複習" if high_freq else "需要更多數據分析",
+        "建議用主動回憶練習高頻概念",
+        "低頻考點可以考前再快速瀏覽"
+    ]
+    
+    return ExamAnalysis(
+        examName=examName,
+        totalQuestions=len(keywords) * 5,  # Estimate
+        topicDistribution=topic_dist,
+        highFrequencyTopics=high_freq,
+        lowFrequencyTopics=low_freq,
+        recommendations=recommendations
+    )
+
+
+@router.get("/concept-relations")
+async def get_concept_relations(subjectId: int = 1):
+    """
+    獲取概念關聯圖數據
+    """
+    # Demo data - in production would be from actual NLP analysis
+    nodes = [
+        {"id": "1", "name": "極限", "weight": 90, "type": "core"},
+        {"id": "2", "name": "連續", "weight": 70, "type": "support"},
+        {"id": "3", "name": "導數", "weight": 95, "type": "core"},
+        {"id": "4", "name": "連鎖律", "weight": 75, "type": "support"},
+        {"id": "5", "name": "積分", "weight": 85, "type": "core"},
+        {"id": "6", "name": "微分方程", "weight": 60, "type": "support"},
+        {"id": "7", "name": "Taylor展開", "weight": 65, "type": "support"},
+    ]
+    
+    edges = [
+        {"source": "1", "target": "2", "relation": "是...的基礎"},
+        {"source": "1", "target": "3", "relation": "定義依賴"},
+        {"source": "3", "target": "4", "relation": "應用"},
+        {"source": "3", "target": "5", "relation": "反運算"},
+        {"source": "5", "target": "6", "relation": "應用"},
+        {"source": "3", "target": "7", "relation": "應用"},
+    ]
     
     return {
-        "highValueConcepts": [c["term"] for c in high_value],
-        "lowValueConcepts": [c["term"] for c in low_value[:5]],
-        "coveragePercent": round(coverage, 1),
-        "recommendation": f"优先学习这 {len(high_value)} 个核心概念，可覆盖约 {round(coverage)}% 的重要内容"
+        "nodes": nodes,
+        "edges": edges,
+        "recommendation": "從「極限」開始，它是其他概念的基礎"
     }
 
-@router.post("/analyze-text")
-async def analyze_text(text: str, subjectId: Optional[int] = None):
-    """Analyze text content and extract learning insights"""
-    if len(text) < 50:
-        raise HTTPException(status_code=400, detail="Text too short for analysis")
-    
-    # Extract concepts
-    concepts = extract_concepts_from_text(text)
-    
-    # Generate flashcards
-    flashcards = generate_flashcards_from_concepts(concepts)
-    
-    # 20-80 analysis
-    twenty_eighty = analyze_twenty_eighty(concepts)
-    
-    # Generate study plan
-    study_plan = []
-    for i, concept in enumerate(concepts[:5]):
-        study_plan.append({
-            "day": i + 1,
-            "concept": concept["term"],
-            "activity": "主动回憶" if i % 2 == 0 else "练习题",
-            "estimatedMinutes": 20 + (concept["importance"] * 30)
-        })
-    
-    return AnalysisResult(
-        concepts=concepts,
-        keyTopics=[c["term"] for c in concepts[:5]],
-        suggestedFlashcards=flashcards,
-        studyPlan=study_plan,
-        twentyEightyAnalysis=twenty_eighty
-    )
 
-@router.post("/analyze-pdf")
-async def analyze_pdf(file: UploadFile = File(...)):
-    """Analyze uploaded PDF and extract concepts"""
-    if not file.filename.endswith('.pdf'):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+@router.get("/pareto-analysis/{subjectId}")
+async def get_pareto_analysis(subjectId: int):
+    """
+    20-80 分析：找出高價值概念
+    """
+    # Demo analysis results
+    all_concepts = [
+        {"name": "極限", "examWeight": 25, "cumulative": 25},
+        {"name": "導數", "examWeight": 22, "cumulative": 47},
+        {"name": "積分", "examWeight": 18, "cumulative": 65},
+        {"name": "連鎖律", "examWeight": 10, "cumulative": 75},
+        {"name": "Taylor展開", "examWeight": 8, "cumulative": 83},
+        {"name": "連續性", "examWeight": 5, "cumulative": 88},
+        {"name": "微分方程", "examWeight": 5, "cumulative": 93},
+        {"name": "極值問題", "examWeight": 4, "cumulative": 97},
+        {"name": "曲線描繪", "examWeight": 3, "cumulative": 100},
+    ]
     
-    try:
-        # Read file content
-        content = await file.read()
-        
-        # In production, use pdfplumber:
-        # import pdfplumber
-        # with pdfplumber.open(io.BytesIO(content)) as pdf:
-        #     text = "\n".join(page.extract_text() for page in pdf.pages)
-        
-        # For now, return mock analysis
-        return {
-            "success": True,
-            "filename": file.filename,
-            "pageCount": 10,  # Mock
-            "concepts": [
-                {"term": "积分", "importance": 0.9},
-                {"term": "微分", "importance": 0.85},
-                {"term": "极限", "importance": 0.8}
-            ],
-            "flashcardsGenerated": 6,
-            "message": "PDF分析完成（示例数据）。完整解析需安装pdfplumber。"
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/analyze-exam")
-async def analyze_exam(
-    examQuestions: List[str],
-    subjectId: Optional[int] = None
-):
-    """Analyze exam questions to identify patterns"""
-    all_concepts = []
-    
-    for question in examQuestions:
-        concepts = extract_concepts_from_text(question)
-        all_concepts.extend(concepts)
-    
-    # Aggregate concept frequencies
-    concept_counts = {}
-    for c in all_concepts:
-        term = c["term"]
-        if term in concept_counts:
-            concept_counts[term]["frequency"] += 1
-        else:
-            concept_counts[term] = {"term": term, "frequency": 1}
-    
-    # Sort by frequency
-    sorted_concepts = sorted(
-        concept_counts.values(),
-        key=lambda x: x["frequency"],
-        reverse=True
-    )
-    
-    # Calculate weights
-    total_freq = sum(c["frequency"] for c in sorted_concepts)
-    for c in sorted_concepts:
-        c["weight"] = round(c["frequency"] / total_freq, 3) if total_freq > 0 else 0
-    
-    # 20-80 analysis
-    high_value = sorted_concepts[:max(1, len(sorted_concepts) // 5)]
-    high_value_weight = sum(c["weight"] for c in high_value)
+    # Find 80% threshold
+    core_concepts = [c for c in all_concepts if c["cumulative"] <= 80]
     
     return {
-        "examPatterns": sorted_concepts[:10],
-        "totalQuestionsAnalyzed": len(examQuestions),
-        "uniqueConcepts": len(sorted_concepts),
-        "twentyEightyInsight": {
-            "topConcepts": [c["term"] for c in high_value],
-            "coveragePercent": round(high_value_weight * 100, 1),
-            "recommendation": f"专注这 {len(high_value)} 个概念可覆盖约 {round(high_value_weight * 100)}% 的考试内容"
-        },
-        "studySuggestion": "建议按频率排序复习，优先攻克高频考点"
+        "subjectId": subjectId,
+        "analysis": all_concepts,
+        "coreConcepts": core_concepts,
+        "coreCount": len(core_concepts),
+        "totalCount": len(all_concepts),
+        "insight": f"專注這 {len(core_concepts)} 個概念，可以掌握 80% 的考試範圍",
+        "studyPriority": [c["name"] for c in core_concepts]
     }
