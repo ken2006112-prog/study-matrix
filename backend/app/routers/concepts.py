@@ -26,20 +26,57 @@ async def get_concepts(userId: int = 1):
     )
     
     # Map to frontend interface
+    # Map to frontend interface
     result = []
     for c in concepts:
         result.append({
             "id": c.id,
             "name": c.name,
-            "weight": 80, # Mock weight or calculate based on relations
+            "weight": int(c.importance * 100), # Use DB importance (0.0-1.0 -> 0-100)
             "subjectId": c.subjectId,
             "subjectName": c.subject.name if c.subject else "Unknown",
             "subjectColor": c.subject.color if c.subject else "#000000",
-            "mastery": 50, # Mock mastery
+            # TODO: Calculate real mastery from Flashcard reviews related to this concept
+            "mastery": 50, 
             "lastReviewed": None
         })
         
     return result
+
+@router.get("/cloud")
+async def get_concept_cloud(userId: int = 1):
+    """
+    Get optimized data for Tag Cloud visualization.
+    Returns: List[{text, value, color, status}]
+    """
+    concepts = await db.concept.find_many(
+        where={"subject": {"userId": userId}},
+        include={"subject": True}
+    )
+    
+    cloud_data = []
+    for c in concepts:
+        # Determine color based on mastery (Mock for now, or link to FSRS later)
+        # Red = Low Mastery, Green = High
+        mastery = 0.5 # Default
+        
+        # Color logic: Red (H=0) -> Green (H=120)
+        hue = int(mastery * 120) 
+        color = f"hsl({hue}, 70%, 50%)"
+        
+        cloud_data.append({
+            "id": c.id, # Needed for Quiz
+            "text": c.name,
+            "value": int(c.importance * 100) if c.importance else 50,
+            "color": c.subject.color if c.subject else "#000000", # Or subject color?
+            # Blueprint says: Color = Status. 
+            # Let's use a dynamic status color but maybe tinted by Subject?
+            # For simplicity: Use Status Color (Red/Green)
+            "statusColor": color,
+            "subject": c.subject.name if c.subject else "General"
+        })
+        
+    return cloud_data
 
 
 @router.post("/extract", response_model=List[ConceptItem])

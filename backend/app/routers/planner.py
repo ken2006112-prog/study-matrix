@@ -4,6 +4,26 @@ from app.db import db
 from app.schemas import Subject, SubjectCreate, StudySession, StudySessionCreate
 
 router = APIRouter()
+from app.services.planner_engine import planner_engine
+
+# --- Planner Generation ---
+
+@router.post("/generate")
+async def generate_plan():
+    # TODO: Auth
+    user_id = 1
+    return await planner_engine.generate_initial_plan(user_id)
+
+@router.get("/roadmap")
+async def get_roadmap():
+    # Return high-level study plans
+    # TODO: Auth
+    plans = await db.studyplan.find_many(
+        include={'exam': {'include': {'subject': True}}},
+        order={'weekStart': 'asc'}
+    )
+    return plans
+
 
 
 # --- Subjects ---

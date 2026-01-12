@@ -6,6 +6,20 @@ import tempfile
 from datetime import datetime
 
 router = APIRouter()
+from app.services.textbook_analyzer import textbook_analyzer
+
+@router.post("/analyze/{material_id}")
+async def analyze_textbook(material_id: int):
+    """
+    Trigger deep analysis of a textbook PDF.
+    Extracts TOC, Chapters, and Core Concepts.
+    """
+    try:
+        result = await textbook_analyzer.analyze_textbook(material_id)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 class UploadResponse(BaseModel):
     filename: str

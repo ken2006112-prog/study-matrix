@@ -89,7 +89,15 @@ class ReportService:
             "focus_score": focus_score,
             "study_streak": streak,
             "avg_session_duration": round(total_duration / len(sessions), 1) if sessions else 0,
-            "interruptions_count": total_interruptions
+            "interruptions_count": total_interruptions,
+            "recent_sessions_log": [
+                {
+                    "subject": s.subject.name if s.subject else "Self Study",
+                    "duration": s.duration,
+                    "date": s.startTime.isoformat(),
+                    "type": "Deep Work" # Simplified
+                } for s in sorted(sessions, key=lambda x: x.startTime, reverse=True)[:10]
+            ]
         }
     
     def _calculate_weekly_score(self, stats: dict) -> int:

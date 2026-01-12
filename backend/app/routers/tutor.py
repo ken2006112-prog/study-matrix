@@ -14,6 +14,18 @@ class TutorResponse(BaseModel):
     shouldFollowUp: bool = True
     conceptScore: Optional[int] = None  # 0-100 understanding score
 
+class QuizRequest(BaseModel):
+    subjectId: Optional[int] = None
+    conceptIds: Optional[List[int]] = None
+
+from app.services.quiz_generator import quiz_generator
+
+@router.post("/quiz")
+async def generate_quiz(req: QuizRequest):
+    """Generate a quiz based on subject or specific concepts"""
+    return await quiz_generator.generate_quiz(req.subjectId, req.conceptIds)
+
+
 # Feynman method feedback templates
 FEEDBACK_TEMPLATES = {
     "good": [

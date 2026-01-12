@@ -54,6 +54,14 @@ model Subject {
   tasks     Task[]
   exams     Exam[]
   materials Material[]
+  
+  // Smart Planner Metadata
+  priority    Int      @default(1) // 1: Normal, 2: High, 3: Core (20%)
+  difficulty  Int      @default(5) // 1-10 (Perceived difficulty)
+  targetGrade String?  // e.g. "A", "90"
+  
+  semesterId  Int?
+  semester    SemesterConfig? @relation(fields: [semesterId], references: [id])
 }
 
 model StudySession {
@@ -135,6 +143,7 @@ model SemesterConfig {
   endDate         DateTime
   weeklyStudyHours Int     // Available hours per week
   learningStyle   String?  // "visual", "reading", "practice", etc.
+  subjects        Subject[]
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }
