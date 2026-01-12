@@ -62,10 +62,19 @@ export default function PlannerPage() {
     const handleGenerate = async () => {
         setGenerating(true);
         try {
-            await fetch("http://localhost:8000/api/v1/planner/generate", { method: 'POST' });
+            const res = await fetch("http://localhost:8000/api/v1/planner/generate", { method: 'POST' });
+            const data = await res.json();
+
+            if (data.status === "no_subjects" || data.status === "no_exams") {
+                // Redirect to setup page with message
+                alert(data.message);
+                window.location.href = data.redirect || "/setup";
+                return;
+            }
+
             window.location.reload();
         } catch (e) {
-            alert("Failed to generate");
+            alert("Failed to generate. Please check backend server.");
         } finally {
             setGenerating(false);
         }

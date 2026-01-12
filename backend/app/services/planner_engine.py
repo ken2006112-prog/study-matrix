@@ -18,13 +18,43 @@ class PlannerEngine:
         )
         
         if not semester:
-             raise Exception("Semester not configured")
-             
-        subjects = semester.subjects
+            # Auto-create a default semester config
+            print(f"No semester found for User {user_id}, creating default...")
+            semester = await db.semesterconfig.create(data={
+                'userId': user_id,
+                'semesterName': 'Default Semester',
+                'startDate': datetime.now(),
+                'endDate': datetime.now() + timedelta(days=120),
+                'weeklyStudyHours': 20,
+                'learningStyle': 'balanced'
+            })
+            # Fetch again with subjects included (will be empty)
+            semester = await db.semesterconfig.find_unique(
+                where={'userId': user_id},
+                include={'subjects': True}
+            )
+              
+        subjects = semester.subjects if semester.subjects else []
+        
+        if not subjects:
+            # Return helpful message instead of error
+            return {
+                "status": "no_subjects",
+                "message": "請先在 /setup 頁面設定科目和考試日期！",
+                "redirect": "/setup"
+            }
+            
         exams = await db.exam.find_many(
             where={'subjectId': {'in': [s.id for s in subjects]}},
             include={'subject': True}
         )
+        
+        if not exams:
+            return {
+                "status": "no_exams", 
+                "message": "請先設定考試日期！系統需要考試日期來產生學習計畫。",
+                "redirect": "/setup"
+            }
         
         # 2. Strategy: Allocate Weekly Hours per Subject
         # Logic: Priority (1-3) * Difficulty (1-10) = Weight
