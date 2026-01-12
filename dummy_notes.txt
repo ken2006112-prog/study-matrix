@@ -1,0 +1,6 @@
+
+# Artificial Intelligence
+AI is intelligence demonstrated by machines, unlike the natural intelligence displayed by humans and animals.
+
+# Machine Learning
+ML is a subset of AI that involves the use of data and algorithms to imitate the way that humans learn, gradually improving its accuracy.

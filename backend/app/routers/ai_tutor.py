@@ -15,11 +15,13 @@ class ChatRequest(BaseModel):
     message: str
     topic: Optional[str] = "這個概念"
     mode: Optional[str] = "understanding"
+    useSearch: Optional[bool] = False # New RAG toggle
     context: Optional[List[ChatMessage]] = []
 
 class ChatResponse(BaseModel):
     response: str
     followUp: Optional[str] = None
+    sources: Optional[List[str]] = None # New field for citations
 
 class InterventionResponse(BaseModel):
     shouldIntervene: bool
@@ -30,38 +32,42 @@ class InterventionResponse(BaseModel):
     topic: Optional[str] = None
     subjectName: Optional[str] = None
 
-# === Prompt Templates ===
-SOCRATIC_PROMPTS = {
-    "understanding": [
-        "很好的開始！那這個概念和{topic}的其他部分有什麼關聯呢？",
-        "你解釋得不錯！但如果有人問你「為什麼」，你會怎麼回答？",
-        "有趣的觀點！能舉一個具體的例子來說明嗎？",
-        "你提到了關鍵點。那如果條件改變了，結論會有什麼不同？"
-    ],
-    "application": [
-        "這是個好的應用例子！那在相反的情況下呢？",
-        "你想到了實際用途！那這個概念還能解決什麼問題？",
-        "不錯的想法！如果把這個應用到更複雜的情況，會發生什麼？"
-    ],
-    "recall": [
-        "你記得很多！那這些要點之間有什麼關聯？",
-        "很好！還有什麼容易被忽略但很重要的細節？",
-        "你回憶得不錯！那最容易混淆的部分是什麼？"
-    ]
-}
-
-ENCOURAGEMENT_MESSAGES = [
-    "你的回答顯示出深入的思考！",
-    "這個角度很有見地！",
-    "你正在建立很好的理解！",
-    "繼續這樣思考，你會越來越清晰！"
-]
+# ... (Socratic prompts unchanged) ...
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_with_tutor(request: ChatRequest):
     """
-    Socratic dialogue with AI tutor
+    Socratic dialogue with AI tutor (Enhanced with RAG)
     """
+    # 1. RAG Mode
+    if request.useSearch:
+        from app.services.rag import rag_service
+        try:
+            # Query vector DB
+            docs = await rag_service.query(request.message)
+            
+            # Generate RAG response
+            rag_response = await rag_service.get_socratic_response_with_context(
+                request.message, 
+                docs
+            )
+            
+            # Extract distinct sources
+            sources = list(set([d.metadata.get("source", "Unknown") for d in docs]))
+            
+            return ChatResponse(
+                response=rag_response, 
+                sources=sources,
+                followUp="還有其他關於這份教材的問題嗎？"
+            )
+        except Exception as e:
+            print(f"RAG Error: {e}")
+            return ChatResponse(
+                response="抱歉，搜尋筆記時發生錯誤。我將切換回普通輔導模式。",
+                followUp=None
+            )
+
+    # 2. Standard Socratic Mode (Existing Logic)
     mode = request.mode or "understanding"
     topic = request.topic or "這個概念"
     

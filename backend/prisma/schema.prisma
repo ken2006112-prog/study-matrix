@@ -26,6 +26,7 @@ model User {
   semesterConfig SemesterConfig?
   memory    UserMemory?
   wellbeingLog UserWellbeing[]
+  materials Material[]
 }
 
 model UserMemory {
@@ -52,6 +53,7 @@ model Subject {
   tags      Tag[]
   tasks     Task[]
   exams     Exam[]
+  materials Material[]
 }
 
 model StudySession {
@@ -213,6 +215,7 @@ model Concept {
   id          Int      @id @default(autoincrement())
   name        String
   subjectId   Int
+  importance  Float    @default(0.5) // 80-20 Rule weight
   tags        Tag[]    @relation("ConceptTags")
   
   // Relations to other concepts
@@ -224,15 +227,13 @@ model Concept {
 }
 
 model ConceptRelation {
-  id          Int      @id @default(autoincrement())
-  sourceId    Int
-  targetId    Int
-  source      Concept  @relation("source", fields: [sourceId], references: [id])
-  target      Concept  @relation("target", fields: [targetId], references: [id])
-  
-  type        String   // "CAUSES", "PART_OF", "SIMILAR_TO", "PREREQUISITE"
-  strength    Float    @default(0.5) // 0-1.0 Connection strength
-  createdAt   DateTime @default(now())
+  id        Int     @id @default(autoincrement())
+  sourceId  Int
+  source    Concept @relation("source", fields: [sourceId], references: [id])
+  targetId  Int
+  target    Concept @relation("target", fields: [targetId], references: [id])
+  type      String  // "PREREQUISITE", "RELATED", "PART_OF"
+  strength  Float   @default(0.5) 
 }
 
 // 2.3 Metacognitive Calibration
@@ -244,8 +245,27 @@ model FlashcardReview {
   rating      Int      // FSRS rating (1-4)
   confidence  Int?     // 0-100% Pre-answer confidence
   actualResult Boolean // True/False
+  calibrationErr Int?  // confidence - normalized_score (0-100)
   
   duration    Int      // milliseconds
   reviewedAt  DateTime @default(now())
+}
+
+model Material {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  subjectId Int?
+  subject   Subject? @relation(fields: [subjectId], references: [id])
+  
+  title     String
+  type      String   // "pdf", "md", "txt"
+  url       String   // Local path 
+  
+  // RAG Metadata
+  isIndexed Boolean  @default(false)
+  chunkCount Int     @default(0)
+  
+  createdAt DateTime @default(now())
 }
 

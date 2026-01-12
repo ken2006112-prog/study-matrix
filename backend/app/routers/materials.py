@@ -61,33 +61,58 @@ async def upload_material(
     else:
         text_content = content.decode('utf-8', errors='ignore')
     
-    # Extract concepts using NLP
+    # Save file to disk
+    upload_path = os.path.join(r"backend/data/uploads", file.filename)
+    # Ensure directory exists (redundant if mkdir run, but safe)
+    os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+    
+    with open(upload_path, "wb") as buffer:
+        buffer.write(content)
+        
+    # Store in DB first to get ID
+    from app.db import db
+    material = await db.material.create({
+        "userId": 1, # Hardcoded for now until auth context is fully passed
+        "title": file.filename,
+        "type": ext.replace(".", ""),
+        "url": upload_path,
+        "isIndexed": False
+    })
+
+    # Ingest into RAG (Async)
+    # In production, use background tasks (Celery/arq)
+    from app.services.rag import rag_service
+    try:
+        chunk_count = await rag_service.ingest_material(upload_path, material.id)
+    except Exception as e:
+        print(f"RAG Ingestion failed: {e}")
+        chunk_count = 0
+    
+    # NLP Extraction (Keep existing logic or replace? keeping for concept cloud)
     from app.services.nlp import nlp_service
     documents = [line for line in text_content.split('\n') if line.strip()]
     concepts = nlp_service.extract_concepts(documents) if documents else []
     
-    # Generate flashcards from content using AI
+    # Generate flashcards (Keep existing logic)
     generated_cards = await generate_cards_from_content(
         text_content, 
         material_type,
         subject_id
     )
     
-    # Store metadata
-    material_meta = {
-        "id": len(uploaded_materials) + 1,
+    uploaded_materials.append({
+        "id": material.id,
         "filename": file.filename,
         "uploadedAt": datetime.now().isoformat(),
         "conceptCount": len(concepts),
         "cardCount": len(generated_cards),
         "subjectId": subject_id,
         "type": material_type
-    }
-    uploaded_materials.append(material_meta)
+    })
     
     return UploadResponse(
         filename=file.filename,
-        text_content=text_content[:2000] + "..." if len(text_content) > 2000 else text_content,
+        text_content=text_content[:200] + "..." if len(text_content) > 200 else text_content,
         concepts=concepts,
         generated_cards=generated_cards
     )
