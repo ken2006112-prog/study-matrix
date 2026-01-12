@@ -47,10 +47,31 @@ export default function FlashcardsPage() {
     const [confidence, setConfidence] = useState(50); // Default 50%
 
     useEffect(() => {
-        // ... unchanged ...
+        const fetchData = async () => {
+            try {
+                // Fetch due cards
+                const cardsRes = await fetch("http://localhost:8000/api/v1/cards/due");
+                if (cardsRes.ok) {
+                    const cardsData = await cardsRes.json();
+                    setCards(cardsData);
+                    setStats(prev => ({ ...prev, total: cardsData.length }));
+                }
+
+                // Fetch subjects
+                const subjectsRes = await fetch("http://localhost:8000/api/v1/planner/subjects/");
+                if (subjectsRes.ok) {
+                    const subjectsData = await subjectsRes.json();
+                    setSubjects(subjectsData);
+                }
+            } catch (e) {
+                console.error("Failed to fetch flashcards data:", e);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchData();
     }, []);
 
-    // ... (fetchData unchanged) ...
 
     const handleFlipRequest = () => {
         setGenerationStep("generating");
