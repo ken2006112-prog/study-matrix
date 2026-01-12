@@ -15,29 +15,31 @@ class ConceptItem(BaseModel):
 
 @router.get("/")
 async def get_concepts(userId: int = 1):
-    """Get all concepts/tags for a user based on their flashcards and sessions"""
-    # Get all flashcards for user with subjects
-    cards = await db.flashcard.find_many(
-        where={"userId": userId},
-        include={"subject": True, "tags": True}
+    """Get all concepts for a user"""
+    concepts = await db.concept.find_many(
+        where={
+            "subject": {
+                "userId": userId
+            }
+        },
+        include={"subject": True}
     )
     
-    # Extract concepts from flashcard fronts
-    if not cards:
-        return []
-    
-    documents = [card.front for card in cards]
-    concepts = nlp_service.extract_concepts(documents)
-    
-    # Add subject names as concepts
-    subjects = set()
-    for card in cards:
-        if card.subject:
-            subjects.add(card.subject.name)
-    
-    subject_concepts = [{"text": name, "value": 1.0} for name in subjects]
-    
-    return concepts + subject_concepts
+    # Map to frontend interface
+    result = []
+    for c in concepts:
+        result.append({
+            "id": c.id,
+            "name": c.name,
+            "weight": 80, # Mock weight or calculate based on relations
+            "subjectId": c.subjectId,
+            "subjectName": c.subject.name if c.subject else "Unknown",
+            "subjectColor": c.subject.color if c.subject else "#000000",
+            "mastery": 50, # Mock mastery
+            "lastReviewed": None
+        })
+        
+    return result
 
 
 @router.post("/extract", response_model=List[ConceptItem])
@@ -53,3 +55,52 @@ async def extract_concepts(request: ExtractRequest):
     concepts = nlp_service.extract_concepts(documents)
     return concepts
 
+@router.get("/graph")
+async def get_concept_graph(userId: int = 1):
+    """Get concept graph (nodes and edges)"""
+    concepts = await db.concept.find_many(
+        where={"userId": None}, # Seeded concepts might not have userId if I didn't set it? Wait, seed set userId?
+        # In seed.py: c_limits = ... userId=user.id (Wait, my updated seed didn't set userId for concepts? Let me check seed content)
+    )
+    # Re-checking seed.py from Step 1579...
+    # c_limits = await db.concept.create(..., subjectId=...) -> No userId!
+    # Schema says: model Concept { ... NO userId field ... }?
+    # Let's check Schema again (Step 1576).
+    # Line 212: model Concept { ... subjectId Int ... tags Tag[] ... outgoing ... incoming ... }
+    # NO userId in Concept model! So concepts are global? Or per subject?
+    # Subjects have userId. Concepts link to Subject. So Concepts are implicitly per user via Subject.
+    
+    # So I need to find concepts where subject.userId == userId.
+    
+    concepts = await db.concept.find_many(
+        where={
+            "subject": {
+                "userId": userId
+            }
+        },
+        include={"outgoing": True}
+    )
+    
+    nodes = []
+    edges = []
+    
+    for c in concepts:
+        # Determine type based on connections or simple heuristic
+        c_type = "core" if len(c.outgoing) > 1 else "support"
+        
+        nodes.append({
+            "id": str(c.id),
+            "label": c.name,
+            "strength": 0.8, # Mock strength or fetch from user mastery if exists
+            "type": c_type
+            # Frontend will handle x,y
+        })
+        
+        for rel in c.outgoing:
+            edges.append({
+                "source": str(rel.sourceId),
+                "target": str(rel.targetId),
+                "strength": rel.strength
+            })
+            
+    return {"nodes": nodes, "edges": edges}

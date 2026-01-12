@@ -43,7 +43,19 @@ class EduMateAgent:
 
     def __init__(self):
         # Initialize OpenAI client manually since it wasn't in original file
-        self.llm_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            print("WARNING: OPENAI_API_KEY not found. Agent features might fail.")
+            # Try loading .env again just in case
+            from dotenv import load_dotenv
+            load_dotenv()
+            api_key = os.getenv("OPENAI_API_KEY")
+            
+        if api_key:
+            self.llm_client = OpenAI(api_key=api_key)
+        else:
+            self.llm_client = None
+            
         # Initialize Cognitive Engine
         self.cognitive_engine = CognitiveEngine(db)
     
