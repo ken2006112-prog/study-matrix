@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Brain, Mail, Lock, User, ArrowRight, Eye, EyeOff, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function SignupPage() {
     const router = useRouter();
+    const { register } = useAuth();
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -21,25 +23,10 @@ export default function SignupPage() {
         setError("");
 
         try {
-            const res = await fetch("http://localhost:8000/api/v1/auth/register", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ name, email, password })
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("userId", data.userId);
-                router.push("/setup");
-            } else {
-                const err = await res.json();
-                setError(err.detail || "註冊失敗，請稍後再試");
-            }
-        } catch (e) {
-            // Demo mode - create user anyway
-            localStorage.setItem("userId", "1");
+            await register(email, password, name);
             router.push("/setup");
+        } catch (e: any) {
+            setError(e.message || "註冊失敗，請稍後再試");
         } finally {
             setLoading(false);
         }

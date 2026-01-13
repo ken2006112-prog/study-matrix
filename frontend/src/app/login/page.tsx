@@ -5,9 +5,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Brain, Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
     const router = useRouter();
+    const { login } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -20,25 +22,10 @@ export default function LoginPage() {
         setError("");
 
         try {
-            const res = await fetch("http://localhost:8000/api/v1/auth/login", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email, password })
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                localStorage.setItem("token", data.token);
-                localStorage.setItem("userId", data.userId);
-                router.push("/");
-            } else {
-                const err = await res.json();
-                setError(err.detail || "登入失敗，請檢查帳號密碼");
-            }
-        } catch (e) {
-            // Demo mode - allow login anyway
-            localStorage.setItem("userId", "1");
+            await login(email, password);
             router.push("/");
+        } catch (e: any) {
+            setError(e.message || "登入失敗，請檢查帳號密碼");
         } finally {
             setLoading(false);
         }

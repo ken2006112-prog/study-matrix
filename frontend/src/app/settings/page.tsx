@@ -1,30 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
-    User,
-    Mail,
-    Lock,
-    Bell,
-    Moon,
-    Sun,
-    LogOut,
-    ChevronRight,
-    Shield,
-    Palette,
-    Globe,
-    Loader2,
-    Check
+    User, Mail, Lock, Bell, Moon, Sun, LogOut, ChevronRight,
+    Shield, Palette, Globe, Loader2, Check, CreditCard, Sparkles, Zap
 } from "lucide-react";
 
 export default function SettingsPage() {
-    const { user, logout, updateProfile } = useAuth();
+    const { user, logout, updateProfile, token } = useAuth();
     const [name, setName] = useState(user?.name || "");
     const [isSaving, setIsSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [darkMode, setDarkMode] = useState(false);
     const [notifications, setNotifications] = useState(true);
+    const [upgrading, setUpgrading] = useState(false);
+
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+    useEffect(() => {
+        if (searchParams.get('status') === 'success') {
+            alert('訂閱成功！感謝您的支持 🚀');
+            router.replace('/settings');
+        }
+        if (searchParams.get('status') === 'canceled') {
+            alert('訂閱已取消');
+            router.replace('/settings');
+        }
+    }, [searchParams, router]);
 
     const handleSaveProfile = async () => {
         setIsSaving(true);
@@ -39,17 +44,65 @@ export default function SettingsPage() {
         }
     };
 
+    const handleUpgrade = async () => {
+        setUpgrading(true);
+        try {
+            const res = await fetch("http://localhost:8000/api/v1/payments/create-checkout-session", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+                body: JSON.stringify({ planId: "price_pro_monthly" })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                window.location.href = data.url;
+            } else {
+                alert("建立付費連結失，請稍後再試");
+            }
+        } catch (e) {
+            console.error(e);
+            alert("發生錯誤");
+        } finally {
+            setUpgrading(false);
+        }
+    };
+
     interface SettingsItem {
         icon: React.ReactNode;
         label: string;
-        value?: string | boolean;
+        value?: string | boolean | React.ReactNode;
         action?: string;
         disabled?: boolean;
         toggle?: boolean;
         onToggle?: () => void;
+        onClick?: () => void;
     }
 
     const settingsSections: { title: string; items: SettingsItem[] }[] = [
+        {
+            title: "訂閱方案",
+            items: [
+                {
+                    icon: <Zap className="w-5 h-5 text-amber-500" />,
+                    label: "目前的方案",
+                    value: (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-secondary text-secondary-foreground">
+                            Free Plan
+                        </span>
+                    ),
+                },
+                {
+                    icon: <Sparkles className="w-5 h-5 text-emerald-500" />,
+                    label: "升級到 Pro",
+                    value: "解鎖無限功能",
+                    action: "upgrade",
+                    onClick: handleUpgrade
+                }
+            ]
+        },
         {
             title: "帳號",
             items: [
@@ -94,27 +147,12 @@ export default function SettingsPage() {
                     label: "語言",
                     value: "繁體中文"
                 },
-                {
-                    icon: <Palette className="w-5 h-5" />,
-                    label: "主題色彩",
-                    value: "藍色"
-                }
             ]
         },
-        {
-            title: "安全",
-            items: [
-                {
-                    icon: <Shield className="w-5 h-5" />,
-                    label: "隱私設定",
-                    action: "privacy"
-                }
-            ]
-        }
     ];
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background pb-20">
             {/* Header */}
             <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/30">
                 <div className="max-w-2xl mx-auto px-4 py-4">
@@ -177,6 +215,7 @@ export default function SettingsPage() {
                             {section.items.map((item, j) => (
                                 <div
                                     key={j}
+                                    onClick={item.onClick}
                                     className={`flex items-center gap-4 p-4 ${item.disabled ? "opacity-50" : "hover:bg-secondary/50 cursor-pointer"
                                         } transition-colors`}
                                 >
@@ -185,13 +224,18 @@ export default function SettingsPage() {
                                     </div>
                                     <div className="flex-1">
                                         <p className="font-medium">{item.label}</p>
-                                        {item.value && !item.toggle && (
+                                        {item.value && !item.toggle && (typeof item.value === 'string' ? (
                                             <p className="text-sm text-muted-foreground">{item.value}</p>
-                                        )}
+                                        ) : (
+                                            item.value
+                                        ))}
                                     </div>
                                     {item.toggle ? (
                                         <button
-                                            onClick={item.onToggle}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                item.onToggle?.();
+                                            }}
                                             className={`w-12 h-7 rounded-full transition-colors ${item.value ? "bg-primary" : "bg-secondary"
                                                 }`}
                                         >
@@ -199,7 +243,8 @@ export default function SettingsPage() {
                                                 }`} />
                                         </button>
                                     ) : !item.disabled && (
-                                        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                                        item.action === 'upgrade' && upgrading ? <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /> :
+                                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
                                     )}
                                 </div>
                             ))}

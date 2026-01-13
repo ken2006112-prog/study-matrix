@@ -27,7 +27,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const API_BASE = "http://localhost:8000/api/v1";
 
 // Public routes that don't require authentication
-const PUBLIC_ROUTES = ["/auth/login", "/auth/register", "/"];
+const PUBLIC_ROUTES = ["/login", "/signup", "/landing", "/"];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);

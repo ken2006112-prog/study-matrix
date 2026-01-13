@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routers import planner, concepts, flashcards, analytics, chat, tasks, tutor, semester, encouragement, memory, analysis, strategies, prompts, ai_tutor, auth, materials, calendar, coach, agent, study, setup
+from app.routers import planner, concepts, flashcards, analytics, chat, tasks, tutor, semester, encouragement, memory, analysis, strategies, prompts, ai_tutor, auth, materials, calendar, coach, agent, study, setup, payments
 from app.db import db
 
 @asynccontextmanager
@@ -40,6 +40,7 @@ app.include_router(coach.router, prefix="/api/v1/coach", tags=["coach"])
 app.include_router(agent.router, prefix="/api/v1/agent", tags=["agent"])
 app.include_router(study.router, prefix="/api/v1/study", tags=["study_agent"])
 app.include_router(setup.router, prefix="/api/v1/setup", tags=["setup"])
+app.include_router(payments.router) # Prefix is defined in router
 
 # Configure CORS
 app.add_middleware(
